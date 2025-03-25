@@ -1,0 +1,155 @@
+import sys
+import tkinter as tk
+from tkinter import ttk
+from io import StringIO
+import random
+
+# Placeholder exercises
+exercises = {
+    "Exercise 1": "Parašyk kodą, kuris išvestų sakinį 'Sveikas, pasauli!'.",
+    "Exercise 2": "Sukurk funkciją, kuri apskaičiuotų skaičiaus kvadratą.",
+    "Exercise 3": "Parašyk ciklą, kuris išves skaičius nuo 1 iki 5."
+}
+
+# Placeholder correct outputs
+correct_outputs = {
+    "Exercise 1": "Sveikas, pasauli!\n",
+    "Exercise 2": "None\n",  # We'll check function output for Exercise 2 later
+    "Exercise 3": "1\n2\n3\n4\n5\n"
+}
+
+# Introductory window explaining basic Python functions
+def show_intro_window():
+    intro_window = tk.Toplevel(root)
+    intro_window.title("Python Pagrindai")
+    intro_window.geometry("600x400")
+    intro_window.configure(bg="#F5F5F5")
+
+    # Intro text explaining Python functions
+    intro_text = """
+    Python Pagrindai:
+
+    1. Kintamieji: Python leidžia saugoti duomenis į kintamuosius.
+       pvz., 'x = 5'
+
+    2. Funkcijos: Funkcijos leidžia suskirstyti kodą į logines dalis.
+       pvz., 'def mano_funkcija():' 
+
+    3. Ciklai: Ciklai naudojami pakartoti veiksmus.
+       pvz., 'for i in range(5):'
+
+    4. Sąlygos: Sąlygos leidžia vykdyti kodą tik tada, kai sąlyga yra teisinga.
+       pvz., 'if x > 5:'
+
+    Spauskite "Pradėti", kad pereitumėte prie užduočių!
+    """
+
+    intro_label = tk.Label(intro_window, text=intro_text, font=("Arial", 12), bg="#F5F5F5", justify="left", padx=10, pady=10)
+    intro_label.pack()
+
+    # Start button to enter the main program
+    start_button = ttk.Button(intro_window, text="Pradėti", command=lambda: [intro_window.destroy(), start_main_program()])
+    start_button.pack(pady=10)
+
+# Function to load the selected exercise
+def load_exercise(event=None):
+    selected = exercise_var.get()
+    exercise_label.config(text=exercises[selected])
+
+# Function to execute student code and capture output
+def execute_code():
+    code_str = code_input.get("1.0", tk.END).strip()
+
+    # Redirect stdout to capture output
+    old_stdout = sys.stdout
+    sys.stdout = StringIO()
+
+    try:
+        exec(code_str, globals())  # Execute user code safely
+        output = sys.stdout.getvalue()
+        output_text.config(fg="black")
+    except Exception as e:
+        output = f"Error: {e}"
+        output_text.config(fg="red")
+
+    sys.stdout = old_stdout  # Restore stdout
+
+    # Display output
+    output_text.config(state=tk.NORMAL)
+    output_text.delete("1.0", tk.END)
+    output_text.insert(tk.END, output)
+    output_text.config(state=tk.DISABLED)
+
+# Function to check the output of student code
+def check_answer():
+    code_str = code_input.get("1.0", tk.END).strip()
+    selected = exercise_var.get()
+    expected_output = correct_outputs[selected]
+
+    # Create a separate environment for execution
+    old_stdout = sys.stdout
+    sys.stdout = StringIO()
+
+    try:
+        # Execute student's code
+        exec(code_str, globals())
+        output = sys.stdout.getvalue().strip()  # Get the printed output and remove any extra spaces or newlines
+    except Exception as e:
+        output = f"Error: {e}"
+
+    sys.stdout = old_stdout  # Restore stdout
+
+    # Compare the output with the correct expected output
+    if output == expected_output.strip():
+        feedback_label.config(text="✅ Teisingai!", fg="green")
+    else:
+        feedback_label.config(text="❌ Pabandyk dar kartą!", fg="red")
+        print(f"Expected: {expected_output}\nYour Output: {output}")  # Debugging output
+
+# Function to start the main program after intro
+def start_main_program():
+    root.deiconify()  # Show the main window after intro window has been shown
+    load_exercise()  # Load the first exercise
+
+# GUI Setup
+root = tk.Tk()
+root.withdraw()  # Hide the main window initially
+
+# Exercise Dropdown
+exercise_var = tk.StringVar()
+exercise_var.set("Exercise 1")  # Default selection
+exercise_dropdown = ttk.Combobox(root, textvariable=exercise_var, values=list(exercises.keys()), state="readonly")
+exercise_dropdown.pack(pady=5)
+exercise_dropdown.bind("<<ComboboxSelected>>", load_exercise)
+
+# Exercise Display
+exercise_label = tk.Label(root, text=exercises["Exercise 1"], font=("Arial", 12), wraplength=500, bg="#F5F5F5")
+exercise_label.pack(padx=10, pady=5)
+
+# Code Editor
+code_input = tk.Text(root, height=10, width=70, font=("Courier", 12), bg="#EAEAEA")
+code_input.pack(padx=10, pady=5)
+
+# Buttons
+button_frame = tk.Frame(root, bg="#F5F5F5")
+button_frame.pack(pady=5)
+
+run_button = ttk.Button(button_frame, text="Run Code", command=execute_code)
+run_button.pack(side="left", padx=5)
+
+check_button = ttk.Button(button_frame, text="Check Answer", command=check_answer)
+check_button.pack(side="left", padx=5)
+
+# Output Display
+output_text = tk.Text(root, height=5, width=70, font=("Courier", 12), bg="#FFF5E1", state=tk.DISABLED)
+output_text.pack(padx=10, pady=5)
+
+# Feedback Label
+feedback_label = tk.Label(root, text="", font=("Arial", 12), bg="#F5F5F5")
+feedback_label.pack(pady=5)
+
+# Show the intro window first
+show_intro_window()
+
+# Start the Tkinter event loop
+root.mainloop()
