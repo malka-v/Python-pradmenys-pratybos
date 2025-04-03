@@ -2,44 +2,41 @@ import sys
 import tkinter as tk
 from tkinter import ttk
 from io import StringIO
-import random
 
 # Placeholder exercises
-exercises = {
-    "Exercise 1": "Parašyk kodą, kuris išvestų sakinį 'Sveikas, pasauli!'.",
-    "Exercise 2": "Sukurk funkciją, kuri apskaičiuotų skaičiaus kvadratą.",
-    "Exercise 3": "Parašyk ciklą, kuris išves skaičius nuo 1 iki 5."
-}
+exercises = [
+    ("Užduotis 1", "Parašyk kodą, kuris išvestų sakinį 'Sveikas, pasauli!'.", "Sveikas, pasauli!\n"),
+    ("Užduotis 2", "Parašyk kodą, kuris suskaičiuotų 5 ir 10 sumą", "15\n"),
+    ("Užduotis 3", "Parašyk kodą, kuris apskaičiuotų skaičiaus x kvadratą. x = 5", "25\n"),
+    ("Užduotis 4", "Parašyk ciklą, kuris išves skaičius nuo 1 iki 5.", "1\n2\n3\n4\n5\n"),
+    ("Užduotis 5",
+     "Trikampio statinių ilgiai yra a = 3, b = 4, parašyk kodą, kuris apskaičiuotų trikampio ižambinę (c) bei trikampio plotą (S). \nAtsakymus užrašyk su jų indeksais, pvz.: c = 2, S = 10",
+     "c = 5.0\nS = 6.0")
+]
 
-# Placeholder correct outputs
-correct_outputs = {
-    "Exercise 1": "Sveikas, pasauli!\n",
-    "Exercise 2": "None\n",  # We'll check function output for Exercise 2 later
-    "Exercise 3": "1\n2\n3\n4\n5\n"
-}
+current_exercise = 0
 
-# Introductory window explaining basic Python functions
 def show_intro_window():
     intro_window = tk.Toplevel(root)
     intro_window.title("Python Pagrindai")
-    intro_window.geometry("600x400")
+    intro_window.geometry("800x450")
     intro_window.configure(bg="#F5F5F5")
 
-    # Intro text explaining Python functions
     intro_text = """
     Python Pagrindai:
 
-    1. Kintamieji: Python leidžia saugoti duomenis į kintamuosius.
+    1. Kintamieji: Python kintamieji aprašomi taip:
        pvz., 'x = 5'
 
-    2. Funkcijos: Funkcijos leidžia suskirstyti kodą į logines dalis.
-       pvz., 'def mano_funkcija():' 
+    2. Matematiniai veiksmai atliekami su jų simboliais, tačiau norint apskaičiuoti laipsnio kėlimą arba 
+    šaknį, reikia naudoti funkciją pow: pow(skaičius, laipsnis), pvz: 3^2 -> pow(3, 2), √4 -> pow(4, 0.5)
 
-    3. Ciklai: Ciklai naudojami pakartoti veiksmus.
-       pvz., 'for i in range(5):'
+    3. Teksto ir kintamųjų išvedimui reikia tekstą rašyti su kabutėmis, o kintamuosius rašyti po kablelio\n     pvz: print('C =', x)
 
     4. Sąlygos: Sąlygos leidžia vykdyti kodą tik tada, kai sąlyga yra teisinga.
        pvz., 'if x > 5:'
+    
+    5. Norint rašyti tekstą stulpeliu naudojamas '\ n' 
 
     Spauskite "Pradėti", kad pereitumėte prie užduočių!
     """
@@ -47,109 +44,158 @@ def show_intro_window():
     intro_label = tk.Label(intro_window, text=intro_text, font=("Arial", 12), bg="#F5F5F5", justify="left", padx=10, pady=10)
     intro_label.pack()
 
-    # Start button to enter the main program
-    start_button = ttk.Button(intro_window, text="Pradėti", command=lambda: [intro_window.destroy(), start_main_program()])
+    start_button = ttk.Button(intro_window, text="Pradėti",
+                              command=lambda: [intro_window.destroy(), start_main_program()])
     start_button.pack(pady=10)
 
-# Function to load the selected exercise
-def load_exercise(event=None):
-    selected = exercise_var.get()
-    exercise_label.config(text=exercises[selected])
+def load_exercise():
+    exercise_label.config(text=exercises[current_exercise][1])
+    code_input.delete("1.0", tk.END)
+    add_line_numbers()
 
-# Function to execute student code and capture output
 def execute_code():
     code_str = code_input.get("1.0", tk.END).strip()
-
-    # Redirect stdout to capture output
     old_stdout = sys.stdout
     sys.stdout = StringIO()
 
     try:
-        exec(code_str, globals())  # Execute user code safely
+        exec(code_str, globals())
         output = sys.stdout.getvalue()
         output_text.config(fg="black")
     except Exception as e:
         output = f"Error: {e}"
         output_text.config(fg="red")
 
-    sys.stdout = old_stdout  # Restore stdout
-
-    # Display output
+    sys.stdout = old_stdout
     output_text.config(state=tk.NORMAL)
     output_text.delete("1.0", tk.END)
     output_text.insert(tk.END, output)
     output_text.config(state=tk.DISABLED)
 
-# Function to check the output of student code
 def check_answer():
+    global current_exercise
     code_str = code_input.get("1.0", tk.END).strip()
-    selected = exercise_var.get()
-    expected_output = correct_outputs[selected]
+    expected_output = exercises[current_exercise][2].strip()  # Strip spaces
 
-    # Create a separate environment for execution
     old_stdout = sys.stdout
     sys.stdout = StringIO()
 
     try:
-        # Execute student's code
-        exec(code_str, globals())
-        output = sys.stdout.getvalue().strip()  # Get the printed output and remove any extra spaces or newlines
+        local_env = {}
+        exec(code_str, {"__builtins__": {}}, local_env)  # Security fix
+        output = sys.stdout.getvalue().strip()  # Strip spaces
+
+        if current_exercise == 3:  # Exercise 4 requires a loop
+            if "for" not in code_str and "while" not in code_str:
+                output = "Error: Please use a loop (for/while) to generate the numbers."
+
+            generated_output = "\n".join(str(i) for i in range(1, 6))
+            if output != generated_output:
+                output = "Error: Incorrect output. Expected numbers from 1 to 5."
+
     except Exception as e:
         output = f"Error: {e}"
 
-    sys.stdout = old_stdout  # Restore stdout
+    sys.stdout = old_stdout
 
-    # Compare the output with the correct expected output
-    if output == expected_output.strip():
+    if output == expected_output:
         feedback_label.config(text="✅ Teisingai!", fg="green")
+        next_button.config(state=tk.NORMAL)
     else:
         feedback_label.config(text="❌ Pabandyk dar kartą!", fg="red")
-        print(f"Expected: {expected_output}\nYour Output: {output}")  # Debugging output
 
-# Function to start the main program after intro
+def next_exercise():
+    global current_exercise
+    if current_exercise < len(exercises) - 1:
+        current_exercise += 1
+        load_exercise()
+        next_button.config(state=tk.DISABLED)
+
+def prev_exercise():
+    global current_exercise
+    if current_exercise > 0:
+        current_exercise -= 1
+        load_exercise()
+
+def add_line_numbers(event=None):
+    code_lines.config(state=tk.NORMAL)
+    code_lines.delete("1.0", tk.END)
+    lines = code_input.get("1.0", tk.END).count("\n") + 1
+    code_lines.insert(tk.END, "\n".join(str(i) for i in range(1, lines + 1)))
+    code_lines.config(state=tk.DISABLED)
+
 def start_main_program():
-    root.deiconify()  # Show the main window after intro window has been shown
-    load_exercise()  # Load the first exercise
+    root.deiconify()
+    load_exercise()
 
-# GUI Setup
+def auto_indent(event):
+    cursor_index = code_input.index(tk.INSERT)
+    line_start = f"{cursor_index.split('.')[0]}.0"
+    line_text = code_input.get(line_start, cursor_index)
+
+    indent = ""
+    for char in line_text:
+        if char == " ":
+            indent += " "
+        else:
+            break
+
+    if line_text.strip().endswith(":"):
+        indent += "    "  # Add 4 spaces
+
+    code_input.insert(tk.INSERT, f"\n{indent}")
+    return "break"
+
+def smart_backspace(event):
+    cursor_index = code_input.index(tk.INSERT)
+    line_start = f"{cursor_index.split('.')[0]}.0"
+    line_text = code_input.get(line_start, cursor_index)
+
+    # If we're at an indentation level, remove 4 spaces
+    if line_text.endswith("    "):
+        code_input.delete(f"{cursor_index} -4c", cursor_index)
+        return "break"  # Prevents normal backspace behavior
+
 root = tk.Tk()
-root.withdraw()  # Hide the main window initially
+root.title("Python Užduotys")
+root.withdraw()
 
-# Exercise Dropdown
-exercise_var = tk.StringVar()
-exercise_var.set("Exercise 1")  # Default selection
-exercise_dropdown = ttk.Combobox(root, textvariable=exercise_var, values=list(exercises.keys()), state="readonly")
-exercise_dropdown.pack(pady=5)
-exercise_dropdown.bind("<<ComboboxSelected>>", load_exercise)
-
-# Exercise Display
-exercise_label = tk.Label(root, text=exercises["Exercise 1"], font=("Arial", 12), wraplength=500, bg="#F5F5F5")
+exercise_label = tk.Label(root, font=("Arial", 12), wraplength=500, bg="#F5F5F5")
 exercise_label.pack(padx=10, pady=5)
 
-# Code Editor
-code_input = tk.Text(root, height=10, width=70, font=("Courier", 12), bg="#EAEAEA")
-code_input.pack(padx=10, pady=5)
+frame = tk.Frame(root)
+frame.pack()
 
-# Buttons
+code_lines = tk.Text(frame, width=4, height=10, font=("Courier", 12), bg="#D3D3D3", state=tk.DISABLED)
+code_lines.pack(side=tk.LEFT, fill=tk.Y)
+
+code_input = tk.Text(frame, height=10, width=66, font=("Courier", 12), bg="#EAEAEA")
+code_input.pack(side=tk.RIGHT, padx=10, pady=5)
+code_input.bind("<KeyRelease>", add_line_numbers)
+code_input.bind("<Return>", auto_indent)  # Fix: move after code_input initialization
+code_input.bind("<BackSpace>", smart_backspace)
+add_line_numbers()
+
 button_frame = tk.Frame(root, bg="#F5F5F5")
 button_frame.pack(pady=5)
 
-run_button = ttk.Button(button_frame, text="Run Code", command=execute_code)
+prev_button = ttk.Button(button_frame, text="←", command=prev_exercise)
+prev_button.pack(side="left", padx=5)
+
+run_button = ttk.Button(button_frame, text="Run", command=execute_code)
 run_button.pack(side="left", padx=5)
 
-check_button = ttk.Button(button_frame, text="Check Answer", command=check_answer)
+check_button = ttk.Button(button_frame, text="Patikrinti", command=check_answer)
 check_button.pack(side="left", padx=5)
 
-# Output Display
+next_button = ttk.Button(button_frame, text="→", command=next_exercise, state=tk.DISABLED)
+next_button.pack(side="left", padx=5)
+
 output_text = tk.Text(root, height=5, width=70, font=("Courier", 12), bg="#FFF5E1", state=tk.DISABLED)
 output_text.pack(padx=10, pady=5)
 
-# Feedback Label
 feedback_label = tk.Label(root, text="", font=("Arial", 12), bg="#F5F5F5")
 feedback_label.pack(pady=5)
 
-# Show the intro window first
 show_intro_window()
-
-# Start the Tkinter event loop
 root.mainloop()
