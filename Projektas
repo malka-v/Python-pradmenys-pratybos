@@ -103,7 +103,7 @@ def check_answer():
         output = sys.stdout.getvalue().strip()
 
         # --- Exercise 4: Loop (1 to 5) ---
-        if current_exercise == 3:
+        if current_exercise == 4:
             if "for" not in code_str and "while" not in code_str:
                 output = "Error: Prašome naudoti ciklą (for/while)."
             else:
