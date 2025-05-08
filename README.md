@@ -6,4 +6,6 @@ Užduotys sudarytos iš šių temų:
 - Matematiniai veiksmai
 - Ciklai for ir while.
 
+Norint parsisiųsti programėlė reikia rinktis V2 versiją.
+
 Kūrė: Laimonas Čiapas
